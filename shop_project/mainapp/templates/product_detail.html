@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load specifications %}
 
 {% block content %}
-    <nav aria-label="breadcrumb">
+    <nav aria-label="breadcrumb" class="mt-4">
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'home' %}">Main</a></li>
         <li class="breadcrumb-item"><a href="#">{{product.category.name}}</a></li>
@@ -16,7 +17,13 @@
             <h3>{{ product.title }}</h3>
             <p>Price: {{ product.price }}</p>
             <p>Description: {{ product.description }}</p>
-            <p>Сharacteristic:</p>
         </div>
+        <p class="mt-4">Сharacteristic:</p>
+        {{ product|product_spec }}
+<!--        {% if product.category.slug == 'laptop' %}-->
+<!--            {% include 'laptop_specification.html' %}-->
+<!--        {% else %}-->
+<!--            {% include 'smartphone_specification.html' %}-->
+<!--        {% endif %}-->
     </div>
 {% endblock content %}
