@@ -143,6 +143,10 @@ class CartProduct(models.Model):
     def __str__(self):
         return f'Product: {self.content_object.title}'
 
+    def save(self, *args, **kwargs):
+        self.final_price = self.qty * self.content_object.price
+        super().save(*args, **kwargs)
+
 
 class Laptop(Product):
     diagonal = models.CharField(max_length=255, verbose_name='Diagonal')
@@ -178,7 +182,7 @@ class Smartphone(Product):
 
 
 class Cart(models.Model):
-    owner = models.ForeignKey('Customer', verbose_name='Owner', on_delete=models.CASCADE)
+    owner = models.ForeignKey('Customer', null=True, verbose_name='Owner', on_delete=models.CASCADE)
     products = models.ManyToManyField(CartProduct, blank=True, related_name='related_cart')
     total_products = models.PositiveIntegerField(default=0)
     final_price = models.DecimalField(default=0, max_digits=9, decimal_places=2, verbose_name='Total price')
@@ -191,8 +195,8 @@ class Cart(models.Model):
 
 class Customer(models.Model):
     user = models.ForeignKey(User, verbose_name='Customer', on_delete=models.CASCADE)
-    phone = models.CharField(max_length=20, verbose_name='Phone number')
-    address = models.CharField(max_length=255, verbose_name='Address')
+    phone = models.CharField(max_length=20, verbose_name='Phone number', null=True, blank=True)
+    address = models.CharField(max_length=255, verbose_name='Address', null=True, blank=True)
 
     def __str__(self):
         return f'Customer: {self.user.first_name} {self.user.last_name}'
