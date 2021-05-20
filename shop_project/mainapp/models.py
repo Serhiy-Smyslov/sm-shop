@@ -12,7 +12,11 @@ from django.urls import reverse
 User = get_user_model()
 
 
-def get_absolute_url(obj, viewname):
+def get_categories_for_count(*model_names):
+    return [models.Count(model_name) for model_name in model_names]
+
+
+def get_product_url(obj, viewname):
     ct_model = obj.__class__._meta.model_name
     return reverse(viewname, kwargs={'ct_model': ct_model, 'slug': obj.slug})
 
@@ -25,10 +29,29 @@ class MaxResolutionErrorException(Exception):
     pass
 
 
+class CategoryManager(models.Manager):
+    CATEGORY_NAME_COUNT_NAME = {
+        'Laptop': 'laptop__count',
+        'Smartphone': 'smartphone__count',
+    }
+
+    def get_queryset(self):
+        return super().get_queryset()
+
+    def get_categories_for_left_sidebar(self):
+        models = get_categories_for_count('laptop', 'smartphone')
+        qs = list(self.get_queryset().annotate(*models))
+        data = [
+            dict(name=c.name, url=c.get_absolute_url(), count=getattr(c, self.CATEGORY_NAME_COUNT_NAME[c.name]))
+            for c in qs if getattr(c, self.CATEGORY_NAME_COUNT_NAME[c.name]) > 0
+        ]
+        return data
+
+
 class LatestProductsManager:
 
     @staticmethod
-    def get_products_for_main_page(self, *args, **kwargs):
+    def get_products_for_main_page(*args, **kwargs):
         """Get all products by categories and argument with_respect_to can sort them by special category."""
         products = []
         with_respect_to = kwargs.get('with_respect_to')
@@ -51,6 +74,7 @@ class LatestProducts:
 
 
 class Category(models.Model):
+    objects = CategoryManager()
     name = models.CharField(max_length=255, verbose_name='Name')
     slug = models.SlugField(unique=True)
 
@@ -60,6 +84,9 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse('category_detail', kwargs={'slug': self.slug})
 
 
 class Product(models.Model):
@@ -114,7 +141,7 @@ class CartProduct(models.Model):
     final_price = models.DecimalField(default=0, max_digits=9, decimal_places=2, verbose_name='Total price')
 
     def __str__(self):
-        return f'Product: {self.product.title}'
+        return f'Product: {self.content_object.title}'
 
 
 class Laptop(Product):
@@ -129,7 +156,7 @@ class Laptop(Product):
         return f'{self.category.name} : {self.title}'
 
     def get_absolute_url(self):
-        return get_absolute_url(self, 'product_detail')
+        return get_product_url(self, 'product_details')
 
 
 class Smartphone(Product):
@@ -147,7 +174,7 @@ class Smartphone(Product):
         return f'{self.category.name} : {self.title}'
 
     def get_absolute_url(self):
-        return get_absolute_url(self, 'product_detail')
+        return get_product_url(self, 'product_details')
 
 
 class Cart(models.Model):
