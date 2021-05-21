@@ -2,31 +2,60 @@
 
 {% block content %}
 {% if cart.products.all %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <strong> {{ message }} </strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+{% endif %}
 <h3 class="text-center mt-5 mb-5">Your cart</h3>
-    <table class="table">
-        <thead>
-        <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Image</th>
-            <th scope="col">Price</th>
-            <th scope="col">Amount</th>
-            <th scope="col">Final price</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in cart.products.all %}
-        <tr>
-            <th scope="row">{{item.content_object.title}}</th>
-            <td class="w-25"><img src="{{ item.content_object.image.url }}" class="img-fluid"></td>
-            <td>$ {{ item.content_object.price }}</td>
-            <td>{{ item.qty }}</td>
-            <td>$ {{ item.final_price }}</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Image</th>
+        <th scope="col">Price</th>
+        <th scope="col">Amount</th>
+        <th scope="col">Final price</th>
+        <th scope="col">Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in cart.products.all %}
+    <tr>
+        <th scope="row">{{item.content_object.title}}</th>
+        <td class="w-25"><img src="{{ item.content_object.image.url }}" class="img-fluid"></td>
+        <td>$ {{ item.content_object.price }}</td>
+        <td>
+            <form method="POST"
+                  action="{% url 'change_qty' ct_model=item.content_object.get_model_name slug=item.content_object.slug %}">
+                {% csrf_token %}
+                <input type="number" name="qty" class="form-control w-70" min="1" value="{{ item.qty }}">
+                <input type="submit" class="mt-2 btn btn-primary" value="Change value">
+            </form>
+        </td>
+        <td>$ {{ item.final_price }}</td>
+        <td>
+            <a href="{% url 'delete_from_cart' ct_model=item.content_object.get_model_name slug=item.content_object.slug %}">
+                <button class="btn btn-danger">Delete</button>
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+    <tr>
+        <td colspan="2"></td>
+        <td>Total:</td>
+        <td>{{ cart.total_products }}</td>
+        <td>$ {{ cart.final_price }}</td>
+    </tr>
+    </tbody>
+</table>
 {% else %}
-    <h3 class="mt-3">Cart is empty...</h3>
+<h3 class="mt-3">Cart is empty...</h3>
 {% endif %}
 {% endblock content %}
 

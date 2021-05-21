@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import F
+from django.contrib import messages
 from django.shortcuts import render
 from django.views.generic import DetailView, ListView, View
 from django.http import HttpResponseRedirect
@@ -71,6 +71,42 @@ class AddView(CartMixin, View):
         cart_product, created = CartProduct.objects.get_or_create(
             user=self.cart.owner, cart=self.cart, content_type=content_type, object_id=product.id
         )
+        print(created, cart_product)
         if created:
             self.cart.products.add(cart_product)
+        self.cart.save()
+        messages.add_message(request, messages.INFO, "Product added in cart")
+        return HttpResponseRedirect('/cart/')
+
+
+class DeleteView(CartMixin, View):
+
+    def get(self, request, *args, **kwargs):
+        ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('slug')
+        content_type = ContentType.objects.get(model=ct_model)
+        product = content_type.model_class().objects.get(slug=product_slug)
+        cart_product = CartProduct.objects.get(
+            user=self.cart.owner, cart=self.cart, content_type=content_type, object_id=product.id
+        )
+        self.cart.products.remove(cart_product)
+        cart_product.delete()
+        self.cart.save()
+        messages.add_message(request, messages.INFO, "Product removed from cart")
+        return HttpResponseRedirect('/cart/')
+
+
+class ChangeQTYView(CartMixin, View):
+
+    def post(self, request, *args, **kwargs):
+        ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('slug')
+        content_type = ContentType.objects.get(model=ct_model)
+        product = content_type.model_class().objects.get(slug=product_slug)
+        cart_product = CartProduct.objects.get(
+            user=self.cart.owner, cart=self.cart, content_type=content_type, object_id=product.id
+        )
+        qty = int(request.POST.get('qty'))
+        cart_product.qty = qty
+        cart_product.save()
+        self.cart.save()
+        messages.add_message(request, messages.INFO, "Product change your amount")
         return HttpResponseRedirect('/cart/')

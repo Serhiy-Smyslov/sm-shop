@@ -11,8 +11,14 @@ class SmartphoneAdminForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.fields['image'].help_text = mark_safe(
+            '<span style="color: red; font-size: 12px;">Upload files '
+            'in max size({} x {}) or they will be change.</span>'.format(
+                *Product.MAX_RESOLUTION))
+
         instance = kwargs.get('instance')
-        if not instance.sd:
+        if instance and not instance.sd:
             self.fields['sd_volume_max'].widget.attrs.update({
                 'readonly': True, 'style': 'background: lightgray;',
             })
