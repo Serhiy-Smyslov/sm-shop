@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'mainapp.apps.MainappConfig',
+
+    'crispy_forms',
 ]
 
 MIDDLEWARE = [
@@ -123,9 +125,7 @@ STATIC_URL = '/static/'
 
 STATIC_ROOT = BASE_DIR / 'static'
 
-STATICFILES_DIRS = [
-
-]
+STATICFILES_DIRS = []
 
 # Media files
 
@@ -137,3 +137,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Crispy component
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
