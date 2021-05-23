@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.urls import reverse
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -209,6 +210,43 @@ class Customer(models.Model):
     user = models.ForeignKey(User, verbose_name='Customer', on_delete=models.CASCADE)
     phone = models.CharField(max_length=20, verbose_name='Phone number', null=True, blank=True)
     address = models.CharField(max_length=255, verbose_name='Address', null=True, blank=True)
+    orders = models.ManyToManyField('Order', verbose_name='User orders', related_name='related_customer')
 
     def __str__(self):
         return f'Customer: {self.user.first_name} {self.user.last_name}'
+
+
+class Order(models.Model):
+    STATUS_NEW = 'new'
+    STATUS_IN_PROGRESS = 'in_progress'
+    STATUS_READY = 'is_ready'
+    STATUS_COMPLETED = 'completed'
+
+    BUYING_TYPE_SELF = 'self'
+    BUYING_TYPE_DELIVERY = 'delivery'
+
+    STATUS_CHOISES = (
+        (STATUS_NEW, 'New Order'),
+        (STATUS_IN_PROGRESS, 'Order in progress'),
+        (STATUS_READY, 'Order is ready'),
+        (STATUS_COMPLETED, 'Completed'),
+    )
+
+    BUYING_TYPE = (
+        (BUYING_TYPE_SELF, 'Customer'),
+        (BUYING_TYPE_DELIVERY, 'Delivery'),
+    )
+
+    customer = models.ForeignKey(Customer, verbose_name='Customer', related_name='related_orders', on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=255, verbose_name='Name')
+    last_name = models.CharField(max_length=255, verbose_name='Smyslov')
+    phone = models.CharField(max_length=255, verbose_name='Phone')
+    address = models.CharField(max_length=255, verbose_name='Address')
+    status = models.CharField(max_length=1024, verbose_name='Status', choices=STATUS_CHOISES, default=STATUS_NEW)
+    buying = models.CharField(max_length=1024, verbose_name='Buying', choices=BUYING_TYPE, default=BUYING_TYPE_DELIVERY)
+    comment = models.TextField(verbose_name='Comment', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now=True, verbose_name='Add to database')
+    order_date = models.DateField(verbose_name='Data will complete', default=timezone.now)
+
+    def __str__(self):
+        return str(self.id)
