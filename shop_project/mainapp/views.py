@@ -84,7 +84,7 @@ class AddView(CartMixin, View):
         if created:
             self.cart.products.add(cart_product)
         recalc_cart(self.cart)
-        messages.add_message(request, messages.INFO, "Product added in cart")
+        # messages.add_message(request, messages.INFO, "Product added in cart")
         return HttpResponseRedirect('/cart/')
 
 
