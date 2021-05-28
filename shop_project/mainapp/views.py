@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.views.generic import DetailView, ListView, View
 from django.http import HttpResponseRedirect
 
-from .models import Product, Category, Customer, Cart, CartProduct
+from .models import Product, Category, Customer, Cart, CartProduct, Order
 from .mixins import CartMixin
 from .forms import OrderForm, LoginForm, RegistrationForm
 from .utils import recalc_cart
@@ -200,3 +200,17 @@ class RegistrationView(CartView, View):
             login(request, user)
             return HttpResponseRedirect('/')
         return render(request, 'login.html', {'form': form, 'cart': self.cart})
+
+
+class ProfileView(CartView, View):
+
+    def get(self, request, *args, **kwargs):
+        customer = Customer.objects.get(user=request.user)
+        orders = Order.objects.filter(customer=customer).order_by('-created_at')
+        categories = Category.objects.all()
+        context = {
+            'orders': orders,
+            'categories': categories,
+            'cart': self.cart,
+        }
+        return render(request, 'profile.html', context)
