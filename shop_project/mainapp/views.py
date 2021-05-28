@@ -8,7 +8,7 @@ from django.http import HttpResponseRedirect
 
 from .models import Product, Category, Customer, Cart, CartProduct
 from .mixins import CartMixin
-from .forms import OrderForm, LoginForm
+from .forms import OrderForm, LoginForm, RegistrationForm
 from .utils import recalc_cart
 
 
@@ -166,4 +166,37 @@ class LoginView(CartView, View):
             if user:
                 login(request, user)
                 return HttpResponseRedirect('/')
+        return render(request, 'login.html', {'form': form, 'cart': self.cart})
+
+
+class RegistrationView(CartView, View):
+
+    def get(self, request, *args, **kwargs):
+        form = RegistrationForm(request.POST or None)
+        categories = Category.objects.all()
+        context = {'categories': categories, 'form': form, 'cart': self.cart}
+        return render(request, 'registration.html', context)
+
+    def post(self, request, *args, **kwargs):
+        form = RegistrationForm(request.POST or None)
+        if form.is_valid():
+            new_user = form.save(commit=False)
+            new_user.username = form.cleaned_data['username']
+            new_user.first_name = form.cleaned_data['first_name']
+            new_user.last_name = form.cleaned_data['last_name']
+            new_user.email = form.cleaned_data['email']
+            new_user.save()
+            new_user.set_password(form.cleaned_data['password'])
+            new_user.save()
+            Customer.objects.create(
+                user=new_user,
+                phone=form.cleaned_data['phone'],
+                address=form.cleaned_data['address']
+            )
+            user = authenticate(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password']
+            )
+            login(request, user)
+            return HttpResponseRedirect('/')
         return render(request, 'login.html', {'form': form, 'cart': self.cart})
