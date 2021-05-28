@@ -3,6 +3,16 @@
 {% block content %}
 {% if cart.products.all %}
 <h3 class="text-center mt-5 mb-5">Your cart</h3>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+    <strong> {{ message }} </strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+{% endif %}
 <table class="table">
     <thead>
     <tr>
@@ -17,20 +27,20 @@
     <tbody>
     {% for item in cart.products.all %}
     <tr>
-        <th scope="row">{{item.content_object.title}}</th>
-        <td class="w-25"><img src="{{ item.content_object.image.url }}" class="img-fluid"></td>
-        <td>$ {{ item.content_object.price }}</td>
+        <th scope="row">{{item.product.title}}</th>
+        <td class="w-25"><img src="{{ item.product.image.url }}" class="img-fluid"></td>
+        <td>$ {{ item.product.price }}</td>
         <td>
             <form method="POST"
-                  action="{% url 'change_qty' ct_model=item.content_object.get_model_name slug=item.content_object.slug %}">
+                  action="{% url 'change_qty' slug=item.product.slug %}">
                 {% csrf_token %}
                 <input type="number" name="qty" class="form-control w-70" min="1" value="{{ item.qty }}">
                 <input type="submit" class="mt-2 btn btn-primary" value="Change value">
             </form>
         </td>
-        <td>$ {{ item.final_price }}</td>
+        <td>$ {{ item.product.final_price }}</td>
         <td>
-            <a href="{% url 'delete_from_cart' ct_model=item.content_object.get_model_name slug=item.content_object.slug %}">
+            <a href="{% url 'delete_from_cart' slug=item.product.slug %}">
                 <button class="btn btn-danger">Delete</button>
             </a>
         </td>
@@ -41,7 +51,9 @@
         <td>Total:</td>
         <td>{{ cart.total_products }}</td>
         <td>$ {{ cart.final_price }}</td>
-        <td><a href="{% url 'checkout' %}"><button class="btn btn-primary">Make order</button></a></td>
+        <td><a href="{% url 'checkout' %}">
+            <button class="btn btn-primary">Make order</button>
+        </a></td>
     </tr>
     </tbody>
 </table>

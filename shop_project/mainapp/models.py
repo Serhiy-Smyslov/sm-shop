@@ -1,25 +1,15 @@
-import sys
-from PIL import Image
-from io import BytesIO
+# import sys
+# from PIL import Image
+# from io import BytesIO
 
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 
 User = get_user_model()
-
-
-def get_categories_for_count(*model_names):
-    return [models.Count(model_name) for model_name in model_names]
-
-
-def get_product_url(obj, viewname):
-    ct_model = obj.__class__._meta.model_name
-    return reverse(viewname, kwargs={'ct_model': ct_model, 'slug': obj.slug})
 
 
 class MinResolutionErrorException(Exception):
@@ -30,52 +20,7 @@ class MaxResolutionErrorException(Exception):
     pass
 
 
-class CategoryManager(models.Manager):
-    CATEGORY_NAME_COUNT_NAME = {
-        'Laptop': 'laptop__count',
-        'Smartphone': 'smartphone__count',
-    }
-
-    def get_queryset(self):
-        return super().get_queryset()
-
-    def get_categories_for_left_sidebar(self):
-        models = get_categories_for_count('laptop', 'smartphone')
-        qs = list(self.get_queryset().annotate(*models))
-        data = [
-            dict(name=c.name, url=c.get_absolute_url(), count=getattr(c, self.CATEGORY_NAME_COUNT_NAME[c.name]))
-            for c in qs if getattr(c, self.CATEGORY_NAME_COUNT_NAME[c.name]) > 0
-        ]
-        return data
-
-
-class LatestProductsManager:
-
-    @staticmethod
-    def get_products_for_main_page(*args, **kwargs):
-        """Get all products by categories and argument with_respect_to can sort them by special category."""
-        products = []
-        with_respect_to = kwargs.get('with_respect_to')
-        ct_models = ContentType.objects.filter(model__in=args)
-        for ct_model in ct_models:
-            model_products = ct_model.model_class()._base_manager.all().order_by('-id')[:5]
-            products.extend(model_products)
-        if with_respect_to:
-            ct_model = ContentType.objects.filter(model=with_respect_to)
-            if ct_model.exists():
-                if with_respect_to in args:
-                    return sorted(
-                        products, key=lambda x: x.__class__._meta.model_name.startswith(with_respect_to), reverse=True
-                    )
-        return products
-
-
-class LatestProducts:
-    objects = LatestProductsManager()
-
-
 class Category(models.Model):
-    objects = CategoryManager()
     name = models.CharField(max_length=255, verbose_name='Name')
     slug = models.SlugField(unique=True)
 
@@ -91,12 +36,9 @@ class Category(models.Model):
 
 
 class Product(models.Model):
-    MIN_RESOLUTION = (400, 400)
-    MAX_RESOLUTION = (800, 800)
-    MAX_IMAGE_SIZE = 3145728
-
-    class Meta:
-        abstract = True
+    # MIN_RESOLUTION = (400, 400)
+    # MAX_RESOLUTION = (800, 800)
+    # MAX_IMAGE_SIZE = 3145728
 
     category = models.ForeignKey(Category, verbose_name='Category', on_delete=models.CASCADE)
     title = models.CharField(max_length=255, verbose_name='Name')
@@ -108,81 +50,49 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
-    def save(self, *args, **kwargs):
-        # image = self.image
-        # img = Image.open(image)
-        # min_height, min_width = self.MIN_RESOLUTION
-        # max_height, max_width = self.MAX_RESOLUTION
-        # if img.height < min_height and img.width < min_width:
-        #     raise MinResolutionErrorException('Upload image size less than min size!')
-        # if img.height > max_height and img.width > max_width:
-        #     raise MaxResolutionErrorException('Upload image size bigger than max size!')
-        # super().save(*args, **kwargs)
-        image = self.image
-        img = Image.open(image)
-        new_image = img.convert('RGB')
-        resized_new_img = new_image.resize((200, 200), Image.ANTIALIAS)
-        filestream = BytesIO()
-        resized_new_img.save(filestream, 'JPEG', quility=90)
-        filestream.seek(0)
-        name = '{}'.format(self.image.name.split('.'))
-        self.image = InMemoryUploadedFile(
-            filestream, 'ImageField', name, 'jpeg/image', sys.getsizeof(filestream), None
-        )
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     # image = self.image
+    #     # img = Image.open(image)
+    #     # min_height, min_width = self.MIN_RESOLUTION
+    #     # max_height, max_width = self.MAX_RESOLUTION
+    #     # if img.height < min_height and img.width < min_width:
+    #     #     raise MinResolutionErrorException('Upload image size less than min size!')
+    #     # if img.height > max_height and img.width > max_width:
+    #     #     raise MaxResolutionErrorException('Upload image size bigger than max size!')
+    #     # super().save(*args, **kwargs)
+    #     image = self.image
+    #     img = Image.open(image)
+    #     new_image = img.convert('RGB')
+    #     resized_new_img = new_image.resize((200, 200), Image.ANTIALIAS)
+    #     filestream = BytesIO()
+    #     resized_new_img.save(filestream, 'JPEG', quility=90)
+    #     filestream.seek(0)
+    #     name = '{}'.format(self.image.name.split('.'))
+    #     self.image = InMemoryUploadedFile(
+    #         filestream, 'ImageField', name, 'jpeg/image', sys.getsizeof(filestream), None
+    #     )
+    #     super().save(*args, **kwargs)
 
     def get_model_name(self):
         return self.__class__.__name__.lower()
+
+    def get_absolute_url(self):
+        return reverse('product_details', kwargs={'slug': self.slug})
 
 
 class CartProduct(models.Model):
     cart = models.ForeignKey('Cart', verbose_name='Cart', on_delete=models.CASCADE, related_name='related_products')
     user = models.ForeignKey('Customer', verbose_name='Customer', on_delete=models.CASCADE)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    product = models.ForeignKey(Product, verbose_name='product', on_delete=models.CASCADE)
     qty = models.PositiveIntegerField(default=1)
     final_price = models.DecimalField(default=0, max_digits=9, decimal_places=2, verbose_name='Total price')
 
     def __str__(self):
-        return f'Product: {self.content_object.title}'
+        return f'Product: {self.product.title}'
 
     def save(self, *args, **kwargs):
-        self.final_price = self.qty * self.content_object.price
+        self.final_price = self.qty * self.product.price
         super().save(*args, **kwargs)
-
-
-class Laptop(Product):
-    diagonal = models.CharField(max_length=255, verbose_name='Diagonal')
-    display_type = models.CharField(max_length=255, verbose_name='Display')
-    processor_freq = models.CharField(max_length=255, verbose_name='Processor Freq')
-    ram = models.CharField(max_length=255, verbose_name='RAM')
-    video = models.CharField(max_length=255, verbose_name='Video Cart')
-    time_without_charge = models.CharField(max_length=255, verbose_name='Battery charge')
-
-    def __str__(self):
-        return f'{self.category.name} : {self.title}'
-
-    def get_absolute_url(self):
-        return get_product_url(self, 'product_details')
-
-
-class Smartphone(Product):
-    diagonal = models.CharField(max_length=255, verbose_name='Diagonal')
-    display_type = models.CharField(max_length=255, verbose_name='Display')
-    resolution = models.CharField(max_length=255, verbose_name='Screen resolution')
-    accum_volume = models.CharField(max_length=255, verbose_name='Accum volume')
-    ram = models.CharField(max_length=255, verbose_name='RAM')
-    sd = models.BooleanField(default=True, verbose_name="SD cart")
-    sd_volume_max = models.CharField(max_length=255, blank=True, null=True, verbose_name='Max ROM')
-    main_cam_mp = models.CharField(max_length=255, verbose_name='Main camera')
-    frontal_cam_mp = models.CharField(max_length=255, verbose_name='Frontal camera')
-
-    def __str__(self):
-        return f'{self.category.name} : {self.title}'
-
-    def get_absolute_url(self):
-        return get_product_url(self, 'product_details')
 
 
 class Cart(models.Model):
