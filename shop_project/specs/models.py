@@ -4,7 +4,7 @@ from django.db import models
 # Create your models here.
 class CategoryFeature(models.Model):
     category = models.ForeignKey('mainapp.Category', verbose_name='Category', on_delete=models.CASCADE)
-    filter_name = models.CharField(max_length=100, verbose_name='Characteristic name')
+    feature_name = models.CharField(max_length=100, verbose_name='Characteristic name')
     feature_filter_name = models.CharField(max_length=70, verbose_name='Filter name')
     unit = models.CharField(max_length=50, verbose_name='Unit', blank=True, null=True)
 
@@ -22,7 +22,7 @@ class FeatureValidator(models.Model):
 
     def __str__(self):
         return f'Category - {self.category.name} | ' \
-               f'Characteristic - {self.feature_key.filter_name} | ' \
+               f'Characteristic - {self.feature_key.feature_name} | ' \
                f'Valid name - {self.valid_feature_value}.'
 
 

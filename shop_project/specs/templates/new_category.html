@@ -1,0 +1,12 @@
+{% extends 'product_features.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+    <form action="{% url 'new_category' %}"  method="POST" class="mt-1">
+        {{ form|crispy }}
+        {% csrf_token %}
+        <input type="submit" class="btn btn-success mt-2" value="Create" >
+    </form>
+
+{% endblock content %}
