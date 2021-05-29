@@ -34,12 +34,6 @@ class Category(models.Model):
     def get_absolute_url(self):
         return reverse('category_detail', kwargs={'slug': self.slug})
 
-    def get_fields_for_filter_in_template(self):
-        return ProductFeatures.objects.filter(
-            category=self,
-            use_in_filter=True
-        ).prefetch_related('category').value('feature_key', 'feature_measure', 'feature_name', 'feature_type')
-
 
 class Product(models.Model):
     # MIN_RESOLUTION = (400, 400)
@@ -159,45 +153,3 @@ class Order(models.Model):
 
     def __str__(self):
         return str(self.id)
-
-
-class ProductFeatures(models.Model):
-    RADIO = 'radio'
-    CHECKBOX = 'checkbox'
-
-    FILTER_TYPE_CHOICES = (
-        (RADIO, 'radio'),
-        (CHECKBOX, 'checkbox')
-    )
-
-    feature_key = models.CharField(max_length=150, verbose_name='Feature key')
-    feature_name = models.CharField(max_length=150, verbose_name='Feature name')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name='Category')
-    postfix_for_value = models.CharField(max_length=30, blank=True, null=True,
-                                         help_text='For example, you can add "hours" for "work hours".',
-                                         verbose_name='Value postfix')
-    use_in_filter = models.BooleanField(default=False, verbose_name='Use filter for products in template')
-    filter_type = models.CharField(default=CHECKBOX, max_length=30, verbose_name='Filter type',
-                                   choices=FILTER_TYPE_CHOICES)
-    filter_measure = models.CharField(
-        max_length=50,
-        verbose_name='Measure type',
-        help_text='For example, you can add "Ghz" for "processor".'
-    )
-
-    def __str__(self):
-        return f'Category - {self.category.name} | Characteristic - {self.feature_name}'
-
-
-class ProductFeatureValidators(models.Model):
-    category = models.ForeignKey(Category, verbose_name='Category', on_delete=models.CASCADE)
-    feature = models.ForeignKey(ProductFeatures, verbose_name='Feature', on_delete=models.CASCADE, null=True,
-                                blank=True)
-    feature_value = models.CharField(max_length=255, unique=True, null=True, blank=True,
-                                     verbose_name='Characteristic type')
-
-    def __str__(self):
-        if not self.feature:
-            return f'Category validator {self.category.name} - characteristic is not choice.'
-        return f'Category validator - {self.category.name} | characteristic - {self.feature.feature_name}' \
-               f'Value - {self.feature_value}.'
